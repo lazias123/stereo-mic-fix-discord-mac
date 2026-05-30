@@ -34,7 +34,7 @@ step by step. You paste a prompt, answer its questions. That's it.
 | 5️⃣ | Answer its questions, follow its instructions ✅ |
 
 > ⚠️ One step turns off a macOS security feature (SIP/AMFI). **Claude will ask for your approval
-> first** and explain the risk. That's the price for having **stereo + screen share** together.
+> first** and explain the risk. That's the price for getting stereo **without breaking** screen sharing (which works by default and the naive patch breaks).
 
 ### 📋 The prompt to paste
 
@@ -80,7 +80,7 @@ Go all the way. Use your tools and sub-agents if needed. Don't stop until the lo
 ```
 
 ⚠️ Disabling SIP + AMFI **lowers security for the whole machine** (see below). It's the price
-for stereo **and** screenshare together. Do it knowingly.
+to get stereo **without breaking** screen sharing. Do it knowingly.
 
 ---
 
@@ -202,7 +202,7 @@ codesign --remove-signature discord_voice.node && codesign --force --sign - disc
 ```
 
 ⚠️ **Security**: SIP off + AMFI off lowers protection for the **whole machine** (any unsigned
-binary can load unsigned libraries). It's the price for stereo **and** screenshare together.
+binary can load unsigned libraries). It's the price for getting stereo **without breaking** screen sharing.
 Re-enabling SIP/AMFI → stereo breaks (the ad-hoc module no longer loads).
 
 TCC: unchanged — the app stays Developer-ID, so grants (mic/screen) persist.
