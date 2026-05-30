@@ -14,6 +14,15 @@ Your Discord mic transmits in **mono** (others hear you "flat"). This repo makes
 👉 **You don't need to know anything.** **Claude Code** does everything and walks you through it
 step by step. You paste a prompt, answer its questions. That's it.
 
+> ### ⛔ Prerequisite — you need a real STEREO source
+> A 2-channel input device is useless if the sound feeding it is mono. You need a genuinely
+> **stereo input on your Mac**:
+> - a **stereo microphone / audio interface** (already 2 channels), **or**
+> - at minimum a **DAW** (Ableton, Reaper, FL Studio…) outputting a stereo signal, routed into
+>   Discord through a **virtual audio cable** (e.g. BlackHole on Mac).
+>
+> A mono mic → stays mono, no matter the patches. Sort this out first.
+
 ## 🚀 Quick start
 
 | | Step |
@@ -43,8 +52,9 @@ Fix summary (two layers):
    "stream" (Go Live) context is LEFT ALONE so screen sharing keeps working.
 The patched module is ad-hoc signed: it only loads if AMFI is disabled (SIP off), which
 lets Discord.app stay Developer-ID intact -> screenshare preserved.
-A 2-CHANNEL input device must be selected in Discord (any of them: a stereo mic/interface,
-or a 2ch virtual cable to route a stereo source).
+PREREQUISITE: I need a genuinely STEREO input source — either a stereo mic/interface, or a
+DAW (Ableton/Reaper/FL Studio) whose stereo output is routed into a 2ch virtual cable. A mono
+mic stays mono no matter what. Then a 2-CHANNEL input device must be selected in Discord.
 
 IMPORTANT — I'm a BEGINNER: explain each step in plain words (what you do and why), verify
 the result after each step, and before touching macOS security (disabling SIP then AMFI),
@@ -110,11 +120,12 @@ Discord captures the channel count of the **input device**. "Default" / a mono m
 Voice & Video → Input Device).
 
 Depending on your goal:
-- **Transmit a stereo source** (music, an app's audio, a stereo mix) → route it into a **2-channel**
-  virtual audio cable and pick that as input. On macOS, a free example is
+- **A real stereo mic / interface** (already 2 channels) → select it directly.
+- **Transmit a stereo source** (a DAW like Ableton / Reaper / FL Studio, music, an app's audio,
+  a stereo mix) → route its stereo output into a **2-channel** virtual audio cable and pick that
+  cable as input. On macOS, a free cable is
   [BlackHole 2ch](https://existential.audio/blackhole/) (`brew install blackhole-2ch`) — but that's
-  just **one** way; any 2ch device works.
-- **A real stereo mic / interface** → select it directly.
+  just **one** option; any 2ch device works.
 
 No specific 2ch device is required by this repo; only the **channel count (2)** matters.
 
