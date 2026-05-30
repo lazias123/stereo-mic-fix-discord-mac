@@ -4,6 +4,57 @@ Discord encode déjà l'audio en stéréo (Opus `stereo:1`, `num_channels:2`), *
 natif WebRTC downmixe la capture 2ch → 1ch *avant* l'encodeur. Résultat : les autres entendent
 du mono (L = R). Le fix demande deux couches : un plugin renderer **et** un patch du binaire natif.
 
+---
+
+## 🔁 Comment répliquer — Claude Code (modèle **Opus**)
+
+> Tout ce repo (reverse-engineering du binaire `discord_voice.node`, patches arm64, signature
+> de code, debug WebRTC) a été conçu et exécuté par **Claude Opus dans Claude Code**. C'est le
+> seul modèle capable de réaliser l'ensemble des modifications. **Utilise Opus**, pas un modèle
+> plus petit.
+
+1. Installe [Claude Code](https://claude.com/claude-code). Choisis le modèle **Opus** (`/model` → Opus).
+2. Clone ce repo et ouvre Claude Code dedans : `git clone … && cd stereo-mic-fix-discord-mac && claude`
+3. Colle **exactement** ce prompt :
+
+```text
+Je suis sur un Mac Apple Silicon. Objectif : faire transmettre mon micro Discord en
+STÉRÉO sans casser le partage d'écran (Go Live). Le procédé complet est dans le
+README.md de ce repo — lis-le d'abord en entier.
+
+Résumé du fix (deux couches) :
+1. Module natif : patcher discord_voice.node pour stopper le downmix 2ch→1ch de WebRTC
+   (script reapply_stereo_native.sh : 4 patches localisés par signature d'octets, puis
+   signature ad-hoc du module).
+2. Renderer : le plugin Equicord src/equicordplugins/stereoMic patche getCodecOptions
+   AU RUNTIME dans start() — micro (contexte "default") → channels:2 + stereo, et le
+   contexte "stream" (Go Live) est ÉPARGNÉ pour que le partage d'écran reste OK.
+Le module patché est ad-hoc : il ne se charge que si AMFI est désactivé (SIP off), ce
+qui permet de garder Discord.app en Developer-ID intact → screenshare préservé.
+Un périphérique d'entrée 2 canaux (BlackHole2ch) doit être sélectionné dans Discord.
+
+Étapes à exécuter :
+1. Vérifie qu'Equicord est installé et injecté dans Discord (sinon guide-moi pour l'installer).
+2. Copie le plugin src/equicordplugins/stereoMic dans mon arbre Equicord, puis build (pnpm build).
+3. Lance reapply_stereo_native.sh pour patcher + signer discord_voice.node.
+4. Guide-moi pas à pas pour :
+   - désactiver SIP puis AMFI : Recovery → "csrutil disable", reboot, puis
+     sudo nvram boot-args="amfi_get_out_of_my_way=1", reboot ;
+   - installer BlackHole 2ch (brew install blackhole-2ch) et le sélectionner dans
+     Discord → Réglages → Voix et vidéo → Périphérique d'entrée.
+5. Vérifie le résultat dans ~/Library/Application Support/discord/logs/discord-webrtc_0 :
+   SetRecordingChannels(2) qui reste, captured_audio_processor channels:2, et
+   ConfigureStream num_channels:2 stereo:1.
+
+Va au bout. Utilise tes outils et des sous-agents si besoin. Ne t'arrête pas tant que le
+log ne montre pas 2 canaux en capture.
+```
+
+⚠️ Désactiver SIP + AMFI **réduit la sécurité de toute la machine** (voir plus bas). C'est le
+prix pour avoir stéréo **et** screenshare ensemble. À faire en connaissance de cause.
+
+---
+
 ## Vérité terrain : le log WebRTC
 
 ```
