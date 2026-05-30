@@ -19,7 +19,8 @@ step by step. You paste a prompt, answer its questions. That's it.
 > **stereo input on your Mac**:
 > - a **stereo microphone / audio interface** (already 2 channels), **or**
 > - at minimum a **DAW** (Ableton, Reaper, FL Studio…) outputting a stereo signal, routed into
->   Discord through a **virtual audio cable** (e.g. BlackHole on Mac).
+>   Discord through a **2-channel virtual audio cable** — on Mac: **BlackHole 2ch**
+>   ([download](https://existential.audio/blackhole/) or `brew install blackhole-2ch`).
 >
 > A mono mic → stays mono, no matter the patches. Sort this out first.
 
