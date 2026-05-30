@@ -1,224 +1,224 @@
-# Micro stéréo Discord 2026 (Apple Silicon) — Procédé complet
+# Discord stereo microphone — Apple Silicon Mac
 
-Discord encode déjà l'audio en stéréo (Opus `stereo:1`, `num_channels:2`), **mais** le module
-natif WebRTC downmixe la capture 2ch → 1ch *avant* l'encodeur. Résultat : les autres entendent
-du mono (L = R). Le fix demande deux couches : un plugin renderer **et** un patch du binaire natif.
+Discord already encodes audio in stereo (Opus `stereo:1`, `num_channels:2`), **but** the native
+WebRTC module downmixes the 2ch capture to 1ch *before* the encoder. Result: everyone hears you
+in mono (L = R). The fix needs two layers: a renderer plugin **and** a native binary patch.
 
 ---
 
-## ✨ C'est quoi ?
+## ✨ What is this?
 
-Ton micro Discord transmet en **mono** (les autres t'entendent « plat »). Ce repo le fait passer
-en **vrai stéréo** (gauche ≠ droite) — **sans casser le partage d'écran**. Sur **Mac Apple Silicon**.
+Your Discord mic transmits in **mono** (others hear you "flat"). This repo makes it true
+**stereo** (left ≠ right) — **without breaking screen sharing**. On **Apple Silicon Macs**.
 
-👉 **Tu n'as rien besoin de connaître.** **Claude Code** fait tout et te guide pas à pas. Tu copies
-un prompt, tu réponds à ses questions. C'est tout.
+👉 **You don't need to know anything.** **Claude Code** does everything and walks you through it
+step by step. You paste a prompt, answer its questions. That's it.
 
-## 🚀 Démarrage rapide
+## 🚀 Quick start
 
-| | Étape |
+| | Step |
 |:--:|---|
-| 1️⃣ | Installe **Claude Code** → [claude.com/claude-code](https://claude.com/claude-code) |
-| 2️⃣ | Mets le modèle **Opus** : tape `/model` → choisis **Opus** *(le seul qui réussit tout)* |
-| 3️⃣ | Tape `/goal va au bout` *(empêche Claude d'abandonner — **essentiel**)* |
-| 4️⃣ | Colle le **prompt** ci-dessous ⬇️ |
-| 5️⃣ | Réponds à ses questions, suis ses instructions ✅ |
+| 1️⃣ | Install **Claude Code** → [claude.com/claude-code](https://claude.com/claude-code) |
+| 2️⃣ | Set the model to **Opus**: type `/model` → pick **Opus** *(the only one that pulls it off)* |
+| 3️⃣ | Type `/goal go all the way` *(keeps Claude from giving up — **essential**)* |
+| 4️⃣ | Paste the **prompt** below ⬇️ |
+| 5️⃣ | Answer its questions, follow its instructions ✅ |
 
-> ⚠️ Une étape coupe une sécurité de macOS (SIP/AMFI). **Claude te demandera ton accord avant**
-> et t'expliquera le risque. C'est le prix pour avoir **stéréo + partage d'écran** ensemble.
+> ⚠️ One step turns off a macOS security feature (SIP/AMFI). **Claude will ask for your approval
+> first** and explain the risk. That's the price for having **stereo + screen share** together.
 
-### 📋 Le prompt à coller
+### 📋 The prompt to paste
 
 ```text
-Je suis sur un Mac Apple Silicon. Objectif : faire transmettre mon micro Discord en
-STÉRÉO sans casser le partage d'écran (Go Live). Le procédé complet est dans le
-README.md de ce repo — lis-le d'abord en entier.
+I'm on an Apple Silicon Mac. Goal: make my Discord microphone transmit in STEREO without
+breaking screen sharing (Go Live). The full procedure is in this repo's README.md — read it
+fully first.
 
-Résumé du fix (deux couches) :
-1. Module natif : patcher discord_voice.node pour stopper le downmix 2ch→1ch de WebRTC
-   (script reapply_stereo_native.sh : 4 patches localisés par signature d'octets, puis
-   signature ad-hoc du module).
-2. Renderer : le plugin Equicord src/equicordplugins/stereoMic patche getCodecOptions
-   AU RUNTIME dans start() — micro (contexte "default") → channels:2 + stereo, et le
-   contexte "stream" (Go Live) est ÉPARGNÉ pour que le partage d'écran reste OK.
-Le module patché est ad-hoc : il ne se charge que si AMFI est désactivé (SIP off), ce
-qui permet de garder Discord.app en Developer-ID intact → screenshare préservé.
-Un périphérique d'entrée 2 CANAUX doit être sélectionné dans Discord (n'importe lequel :
-interface/micro stéréo, ou un câble virtuel 2ch pour router une source stéréo).
+Fix summary (two layers):
+1. Native module: patch discord_voice.node to stop WebRTC's 2ch->1ch downmix
+   (script reapply_stereo_native.sh: 4 patches located by byte signature, then ad-hoc
+   sign the module).
+2. Renderer: the Equicord plugin src/equicordplugins/stereoMic patches getCodecOptions
+   AT RUNTIME in start() — mic ("default" context) -> channels:2 + stereo, while the
+   "stream" (Go Live) context is LEFT ALONE so screen sharing keeps working.
+The patched module is ad-hoc signed: it only loads if AMFI is disabled (SIP off), which
+lets Discord.app stay Developer-ID intact -> screenshare preserved.
+A 2-CHANNEL input device must be selected in Discord (any of them: a stereo mic/interface,
+or a 2ch virtual cable to route a stereo source).
 
-IMPORTANT — je suis DÉBUTANT : explique chaque étape en mots simples (ce que tu fais et
-pourquoi), vérifie le résultat après chaque étape, et avant de toucher à la sécurité macOS
-(désactiver SIP puis AMFI), ARRÊTE-TOI et DEMANDE-MOI ma confirmation en m'expliquant
-clairement le risque. Ne désactive rien sans mon accord explicite.
+IMPORTANT — I'm a BEGINNER: explain each step in plain words (what you do and why), verify
+the result after each step, and before touching macOS security (disabling SIP then AMFI),
+STOP and ASK me for confirmation, clearly explaining the risk. Don't disable anything
+without my explicit OK.
 
-Étapes à exécuter :
-1. Vérifie qu'Equicord est installé et injecté dans Discord (sinon guide-moi pour l'installer).
-2. Copie le plugin src/equicordplugins/stereoMic dans mon arbre Equicord, puis build (pnpm build).
-3. Lance reapply_stereo_native.sh pour patcher + signer discord_voice.node.
-4. Guide-moi pas à pas pour :
-   - désactiver SIP puis AMFI : Recovery → "csrutil disable", reboot, puis
-     sudo nvram boot-args="amfi_get_out_of_my_way=1", reboot ;
-   - sélectionner un périphérique d'entrée 2 CANAUX dans Discord → Réglages → Voix et
-     vidéo → Périphérique d'entrée (un micro/interface stéréo, ou un câble virtuel 2ch
-     comme BlackHole 2ch `brew install blackhole-2ch` si je veux router une source stéréo).
-5. Vérifie le résultat dans ~/Library/Application Support/discord/logs/discord-webrtc_0 :
-   SetRecordingChannels(2) qui reste, captured_audio_processor channels:2, et
+Steps to run:
+1. Check that Equicord is installed and injected into Discord (otherwise guide me to install it).
+2. Copy the src/equicordplugins/stereoMic plugin into my Equicord tree, then build (pnpm build).
+3. Run reapply_stereo_native.sh to patch + sign discord_voice.node.
+4. Walk me through, step by step:
+   - disabling SIP then AMFI: Recovery -> "csrutil disable", reboot, then
+     sudo nvram boot-args="amfi_get_out_of_my_way=1", reboot;
+   - selecting a 2-CHANNEL input device in Discord -> Settings -> Voice & Video ->
+     Input Device (a stereo mic/interface, or a 2ch virtual cable like BlackHole 2ch
+     `brew install blackhole-2ch` if I want to route a stereo source).
+5. Verify the result in ~/Library/Application Support/discord/logs/discord-webrtc_0:
+   SetRecordingChannels(2) that stays, captured_audio_processor channels:2, and
    ConfigureStream num_channels:2 stereo:1.
 
-Va au bout. Utilise tes outils et des sous-agents si besoin. Ne t'arrête pas tant que le
-log ne montre pas 2 canaux en capture.
+Go all the way. Use your tools and sub-agents if needed. Don't stop until the log shows
+2 channels at capture.
 ```
 
-⚠️ Désactiver SIP + AMFI **réduit la sécurité de toute la machine** (voir plus bas). C'est le
-prix pour avoir stéréo **et** screenshare ensemble. À faire en connaissance de cause.
+⚠️ Disabling SIP + AMFI **lowers security for the whole machine** (see below). It's the price
+for stereo **and** screenshare together. Do it knowingly.
 
 ---
 
-## 🎁 Bonus — FollowVoiceUser « débridé »
+## 🎁 Bonus — FollowVoiceUser (unrestricted)
 
-Plugin Equicord pour **suivre quelqu'un en vocal** (quand il change de salon, tu le suis).
-La version d'origine ne marche que pour tes **amis**. Cette version est **débridée** : tu peux
-suivre **n'importe quel utilisateur**.
+Equicord plugin to **follow someone in voice** (when they move channels, you follow them).
+The original only works for your **friends**. This version is **unrestricted**: you can follow
+**any user**.
 
-📄 `bonus/followVoiceUser/index.tsx` → à copier dans `src/equicordplugins/followVoiceUser/`
-de ton Equicord, puis rebuild (`pnpm build`). Clic droit sur un user → « Follow ».
+📄 `bonus/followVoiceUser/index.tsx` → copy it into `src/equicordplugins/followVoiceUser/` of
+your Equicord tree, then rebuild (`pnpm build`). Right-click a user → "Follow".
 
 ---
 
-# 🔧 Détails techniques (optionnel)
+# 🔧 Technical details (optional)
 
-*Pas besoin de lire ça pour répliquer — Claude s'en occupe. C'est ici pour comprendre comment
-ça marche sous le capot.*
+*You don't need to read this to replicate — Claude handles it. It's here to understand how it
+works under the hood.*
 
-## Vérité terrain : le log WebRTC
+## Ground truth: the WebRTC log
 
 ```
 ~/Library/Application Support/discord/logs/discord-webrtc_0
 ```
 
-Lignes clés à surveiller :
+Key lines to watch:
 - `audio_device_buffer.cc: SetRecordingChannels(N)` — capture device
-- `captured_audio_processor.cpp:132 … channels: N` — pré-APM (Discord)
-- `audio_send_stream.cc: ConfigureStream … num_channels: 2 … stereo: 1` — encodeur Opus
-- `echo_canceller3.cc:792: AEC3 created … num capture channels: N` — sous-module APM
-- `audio_processing_impl.cc: ApplyConfig … multi_channel_capture: 0` — la config qui cause le downmix
+- `captured_audio_processor.cpp:132 … channels: N` — pre-APM (Discord)
+- `audio_send_stream.cc: ConfigureStream … num_channels: 2 … stereo: 1` — Opus encoder
+- `echo_canceller3.cc:792: AEC3 created … num capture channels: N` — APM submodule
+- `audio_processing_impl.cc: ApplyConfig … multi_channel_capture: 0` — the config that causes the downmix
 
-## Couche 0 — Périphérique d'entrée 2 canaux (PRÉREQUIS)
+## Layer 0 — 2-channel input device (PREREQUISITE)
 
-Discord capture le nb de canaux du **device d'entrée**. « Défaut » / un micro mono = **1 canal**
-→ tout le reste est inutile (L = R). Il faut sélectionner un **périphérique d'entrée 2 canaux**
-(Réglages → Voix et vidéo → Périphérique d'entrée).
+Discord captures the channel count of the **input device**. "Default" / a mono mic = **1 channel**
+→ everything else is pointless (L = R). You must select a **2-channel input device** (Settings →
+Voice & Video → Input Device).
 
-Selon ton but :
-- **Transmettre une source stéréo** (musique, audio d'une app, mix stéréo) → route-la dans un
-  câble audio virtuel **2 canaux** et choisis-le comme entrée. Sur macOS, un exemple gratuit est
-  [BlackHole 2ch](https://existential.audio/blackhole/) (`brew install blackhole-2ch`) — mais
-  c'est juste **un** moyen ; n'importe quel device 2ch convient.
-- **Vrai micro / interface stéréo** → sélectionne-le directement.
+Depending on your goal:
+- **Transmit a stereo source** (music, an app's audio, a stereo mix) → route it into a **2-channel**
+  virtual audio cable and pick that as input. On macOS, a free example is
+  [BlackHole 2ch](https://existential.audio/blackhole/) (`brew install blackhole-2ch`) — but that's
+  just **one** way; any 2ch device works.
+- **A real stereo mic / interface** → select it directly.
 
-Aucun device 2ch précis n'est imposé par ce repo ; seul le **nombre de canaux (2)** compte.
+No specific 2ch device is required by this repo; only the **channel count (2)** matters.
 
-## Couche 1 — Plugin renderer (JS)
+## Layer 1 — Renderer plugin (JS)
 
-`src/equicordplugins/stereoMic/index.tsx`. Le patch **webpack** sur `getCodecOptions` ne
-s'enregistre pas de façon fiable (le module codec charge avant `initPluginManager`). À la place,
-le plugin patche **au runtime dans `start()`** le prototype de la connexion vocale :
-`getCodecOptions` → pour le contexte micro (`context !== "stream"`), force
-`audioEncoder.channels = 2` + `params {stereo:"1"}`. Le contexte **`"stream"` (Go Live) est
-épargné** → le partage d'écran reste intact. `required: true` pour que `start()` tourne toujours.
-**Nécessaire mais pas suffisant** : sans le patch natif, l'APM réeffondre en mono.
+`src/equicordplugins/stereoMic/index.tsx`. The **webpack** patch on `getCodecOptions` doesn't
+register reliably (the codec module loads before `initPluginManager`). Instead, the plugin patches
+the voice connection prototype **at runtime in `start()`**: `getCodecOptions` → for the mic context
+(`context !== "stream"`), it forces `audioEncoder.channels = 2` + `params {stereo:"1"}`. The
+**`"stream"` (Go Live) context is left untouched** → screen sharing stays intact. `required: true`
+so `start()` always runs. **Necessary but not sufficient**: without the native patch, the APM
+collapses back to mono.
 
-## Couche 2 — Patch natif `discord_voice.node`
+## Layer 2 — Native `discord_voice.node` patch
 
-Binaire **fat Mach-O** ; Apple Silicon exécute la slice **arm64**. Extraction pour analyse :
-`lipo -thin arm64 discord_voice.node -output /tmp/dv_arm64.node`, désassemblage `objdump -d`.
+**Fat Mach-O** binary; Apple Silicon runs the **arm64** slice. Extract for analysis:
+`lipo -thin arm64 discord_voice.node -output /tmp/dv_arm64.node`, disassemble with `objdump -d`.
 
-### Cause racine (WebRTC `AudioProcessingImpl`)
+### Root cause (WebRTC `AudioProcessingImpl`)
 
-`config_.pipeline.multi_channel_capture` (octet à `this+365`) est **false** (Discord le force).
-Deux mécanismes downmixent alors la capture :
+`config_.pipeline.multi_channel_capture` (byte at `this+365`) is **false** (Discord forces it).
+Two mechanisms then downmix the capture:
 
-1. **Allocation** : le buffer capture est alloué avec le nb de canaux lu dans `this+680`
-   (= `api_format` output channels, que Discord met à **1**) → buffer mono.
-2. **Runtime** : `ProcessCaptureStreamLocked` appelle `AudioBuffer::set_num_channels(1)` à chaque frame.
+1. **Allocation**: the capture buffer is allocated with the channel count read from `this+680`
+   (= `api_format` output channels, which Discord sets to **1**) → mono buffer.
+2. **Runtime**: `ProcessCaptureStreamLocked` calls `AudioBuffer::set_num_channels(1)` every frame.
 
-Layout struct (offsets depuis `this`) :
+Struct layout (offsets from `this`):
 
-| Offset | Champ | Valeur build |
+| Offset | Field | Build value |
 |---|---|---|
 | +365 | `multi_channel_capture` (config) | 0 (false) |
-| +769 | `multi_channel_capture_support` | 1 (true par défaut) |
+| +769 | `multi_channel_capture_support` | 1 (true by default) |
 | +680 | proc/output StreamConfig num_channels | 1 |
 | +656 | input StreamConfig num_channels | 2 |
 
-### Les 4 patches (slice arm64)
+### The 4 patches (arm64 slice)
 
-| # | Fonction | Site (vaddr) | Avant → Après | Effet |
+| # | Function | Site (vaddr) | Before → After | Effect |
 |---|---|---|---|---|
-| 0 | `AudioDeviceMac::InitRecording` | — | force `_recChannels = 2` | Capture 2ch depuis le device |
-| P1 | `InitializeLockedEv` (alloc buffer) | `0x23848c` | `ldr x4,[x19,#680]` → `mov x4,x2` (`645641f9`→`e40302aa`) | Buffer capture suit **input** channels (2), pas output (1) |
-| P2 | `ProcessCaptureStreamLocked` | `0x23a5c4` | `tbnz w8,#0,…` → `b 0x23a5d4` (`88000037`→`04000014`) | Skip le `set_num_channels(1)` runtime |
-| P3 | `num_proc_channels()` | `0x2399fc` | `mov w0,#1` → `b 0x239a04` (`20008052`→`02000014`) | Retourne le **vrai** count (vtable) |
+| 0 | `AudioDeviceMac::InitRecording` | — | force `_recChannels = 2` | Capture 2ch from the device |
+| P1 | `InitializeLockedEv` (buffer alloc) | `0x23848c` | `ldr x4,[x19,#680]` → `mov x4,x2` (`645641f9`→`e40302aa`) | Capture buffer follows **input** channels (2), not output (1) |
+| P2 | `ProcessCaptureStreamLocked` | `0x23a5c4` | `tbnz w8,#0,…` → `b 0x23a5d4` (`88000037`→`04000014`) | Skip the runtime `set_num_channels(1)` |
+| P3 | `num_proc_channels()` | `0x2399fc` | `mov w0,#1` → `b 0x239a04` (`20008052`→`02000014`) | Return the **real** count (vtable) |
 
-**P3 est crucial** : tous les sous-modules APM (AEC3, NoiseSuppressor, GainController1/2,
-HighPassFilter) lisent leur nb de canaux via `num_proc_channels()` (vtable slot #80). Sans P3 ils
-s'initialisent en mono pendant que le buffer est en 2ch → mismatch / crash possible si l'utilisateur
-active la suppression de bruit ou l'annulation d'écho.
+**P3 is crucial**: all APM submodules (AEC3, NoiseSuppressor, GainController1/2, HighPassFilter)
+read their channel count via `num_proc_channels()` (vtable slot #80). Without P3 they initialize in
+mono while the buffer is 2ch → mismatch / possible crash if the user enables noise suppression or
+echo cancellation.
 
-### Chargement du module patché — AMFI off (PAS de re-sign du bundle)
+### Loading the patched module — AMFI off (NO bundle re-sign)
 
-Le module patché casse sa signature Developer-ID → re-signé **ad-hoc**. Mais macOS refuse de
-charger un module ad-hoc dans le renderer Developer-ID (library validation du hardened runtime).
+The patched module breaks its Developer-ID signature → re-signed **ad-hoc**. But macOS refuses to
+load an ad-hoc module into the Developer-ID renderer (hardened-runtime library validation).
 
-**Approches écartées** (toutes cassent le screenshare ou crashent) :
-- Re-signer le helper renderer ad-hoc → seal du bundle cassé → macOS 15+/26 revalide le seal
-  au moment de la capture → Go Live « the app doesn't have permission to record your screen ».
-- Re-signer le main app ad-hoc seul → identité mixte → renderer crash (fatal native).
-- Re-signer **tout** le bundle ad-hoc cohérent → seal valide mais renderer crash en boucle
-  (interaction Electron Framework ad-hoc ↔ module natif), et perd notifs push/keychain.
+**Discarded approaches** (all break screenshare or crash):
+- Re-sign the renderer helper ad-hoc → parent bundle seal broken → macOS 15+/26 revalidates the
+  seal at capture time → Go Live "the app doesn't have permission to record your screen".
+- Re-sign only the main app ad-hoc → mixed identity → renderer crash (fatal native).
+- Re-sign the **whole** bundle ad-hoc consistently → valid seal but renderer crashes in a loop
+  (ad-hoc Electron Framework ↔ native module interaction), and loses push notifications/keychain.
 
-**Solution retenue : désactiver AMFI** au niveau système. Discord.app reste **100% Developer-ID
-intact** (seal valide → screenshare OK, TCC préservé), et l'AMFI-off laisse le module ad-hoc se
-charger sans rien re-signer dans le bundle.
+**Chosen solution: disable AMFI** system-wide. Discord.app stays **100% Developer-ID intact**
+(valid seal → screenshare OK, TCC preserved), and AMFI-off lets the ad-hoc module load without
+re-signing anything in the bundle.
 
 ```bash
-# en Recovery (maintenir power → Options → Terminal) :
+# in Recovery (hold power -> Options -> Terminal):
 csrutil disable
-# puis après reboot, dans le terminal normal :
+# then after reboot, in a normal terminal:
 sudo nvram boot-args="amfi_get_out_of_my_way=1"
-# reboot. Le module ad-hoc patché se charge maintenant dans le renderer Developer-ID.
+# reboot. The ad-hoc patched module now loads into the Developer-ID renderer.
 codesign --remove-signature discord_voice.node && codesign --force --sign - discord_voice.node
 ```
 
-⚠️ **Sécurité** : SIP off + AMFI off réduit la protection de **toute la machine** (n'importe
-quel binaire non signé peut charger des libs non signées). C'est le prix pour avoir stéréo
-**et** screenshare ensemble. Réactiver SIP/AMFI → la stéréo casse (le module ad-hoc ne charge plus).
+⚠️ **Security**: SIP off + AMFI off lowers protection for the **whole machine** (any unsigned
+binary can load unsigned libraries). It's the price for stereo **and** screenshare together.
+Re-enabling SIP/AMFI → stereo breaks (the ad-hoc module no longer loads).
 
-TCC : inchangé, l'app reste Developer-ID donc les grants (micro/écran) persistent.
+TCC: unchanged — the app stays Developer-ID, so grants (mic/screen) persist.
 
-### Persistance
+### Persistence
 
-`reapply_stereo_native.sh` réapplique les 4 patches natifs + re-signe le module ad-hoc
-(**sans toucher** au bundle Discord.app, qui reste Developer-ID). Sites localisés par
-**signature d'octets unique** → survit aux MAJ Discord tant que le code WebRTC est inchangé.
-Idempotent (re-run = « already patched »). Le plugin renderer persiste via le build Equicord.
-À relancer après chaque MAJ Discord (le module est re-téléchargé propre).
+`reapply_stereo_native.sh` re-applies the 4 native patches + re-signs the ad-hoc module
+(**without touching** the Discord.app bundle, which stays Developer-ID). Sites are located by
+**unique byte signature** → survives Discord updates as long as the WebRTC code is unchanged.
+Idempotent (re-run = "already patched"). The renderer plugin persists via the Equicord build.
+Re-run after each Discord update (the module is re-downloaded clean).
 
-## Config complète (récap — pour refaire)
+## Full config (recap — to redo)
 
 1. **SIP + AMFI off** (Recovery `csrutil disable` + `nvram boot-args=amfi_get_out_of_my_way=1`).
-2. **Discord.app reste Developer-ID** (rien re-signé dans le bundle → screenshare OK).
-3. **`discord_voice.node`** : 4 patches (InitRec+P1/P2/P3) + ad-hoc signé → `reapply_stereo_native.sh`.
-4. **Plugin StereoMic** (`required:true`) : patch runtime de `getCodecOptions` dans `start()`,
-   micro→2ch, `"stream"` épargné (screenshare safe). Buildé dans Equicord.
-5. **Périphérique d'entrée 2 canaux** (micro/interface stéréo, ou câble virtuel 2ch type BlackHole), pas « Défaut ».
+2. **Discord.app stays Developer-ID** (nothing re-signed in the bundle → screenshare OK).
+3. **`discord_voice.node`**: 4 patches (InitRec+P1/P2/P3) + ad-hoc signed → `reapply_stereo_native.sh`.
+4. **StereoMic plugin** (`required:true`): runtime patch of `getCodecOptions` in `start()`,
+   mic→2ch, `"stream"` left alone (screenshare safe). Built into Equicord.
+5. **2-channel input device** (stereo mic/interface, or a 2ch virtual cable like BlackHole), not "Default".
 
-## Validation (preuves)
+## Validation (evidence)
 
-- **Submodules OFF** : encoder `2ch/stereo:1`, capture 2ch continue, 0 crash, paquets envoyés OK.
-- **Submodules ON** (NoiseSuppression + EchoCancel + AGC) : `AEC3 … num capture channels: 2`,
-  0 crash, audio fluide → pipeline **cohérent en multichannel**.
-- **2 agents RE indépendants** : (1) aucun mismatch canaux — tous les sous-modules clé sur slot #80
-  (= `num_proc_channels` patché) ; (2) le patch 3-sites est l'approche la plus sûre (forcer +365 ou
-  +680 serait pire).
-- **Confirmation auditive** : les potes entendent du vrai stéréo (L ≠ R).
+- **Submodules OFF**: encoder `2ch/stereo:1`, capture stays 2ch, 0 crash, packets sent fine.
+- **Submodules ON** (NoiseSuppression + EchoCancel + AGC): `AEC3 … num capture channels: 2`,
+  0 crash, smooth audio → **consistent multichannel** pipeline.
+- **2 independent RE agents**: (1) no channel mismatch — all key submodules on slot #80
+  (= patched `num_proc_channels`); (2) the 3-site patch is the safest approach (forcing +365 or
+  +680 would be worse).
+- **Audible confirmation**: friends hear true stereo (L ≠ R).
