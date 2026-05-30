@@ -6,21 +6,28 @@ du mono (L = R). Le fix demande deux couches : un plugin renderer **et** un patc
 
 ---
 
-## 🔁 Comment répliquer — Claude Code (modèle **Opus**)
+## ✨ C'est quoi ?
 
-> Tout ce repo (reverse-engineering du binaire `discord_voice.node`, patches arm64, signature
-> de code, debug WebRTC) a été conçu et exécuté par **Claude Opus dans Claude Code**. C'est le
-> seul modèle capable de réaliser l'ensemble des modifications. **Utilise Opus**, pas un modèle
-> plus petit.
+Ton micro Discord transmet en **mono** (les autres t'entendent « plat »). Ce repo le fait passer
+en **vrai stéréo** (gauche ≠ droite) — **sans casser le partage d'écran**. Sur **Mac Apple Silicon**.
 
-1. Installe [Claude Code](https://claude.com/claude-code). Choisis le modèle **Opus** (`/model` → Opus).
-2. Clone ce repo et ouvre Claude Code dedans : `git clone … && cd stereo-mic-fix-discord-mac && claude`
-3. **Active un objectif persistant : tape `/goal va au bout`.** ⚠️ C'est LE truc qui fait
-   marcher l'ensemble. `/goal` pose un hook qui empêche Claude de s'arrêter tant que la stéréo
-   n'est pas confirmée — il enchaîne reverse-engineering du binaire, signature de code, debug
-   du log WebRTC sans abandonner. Sans `/goal`, il s'arrête au premier obstacle. C'est grâce à
-   `/goal` que ce repo existe.
-4. Colle **exactement** ce prompt :
+👉 **Tu n'as rien besoin de connaître.** **Claude Code** fait tout et te guide pas à pas. Tu copies
+un prompt, tu réponds à ses questions. C'est tout.
+
+## 🚀 Démarrage rapide
+
+| | Étape |
+|:--:|---|
+| 1️⃣ | Installe **Claude Code** → [claude.com/claude-code](https://claude.com/claude-code) |
+| 2️⃣ | Mets le modèle **Opus** : tape `/model` → choisis **Opus** *(le seul qui réussit tout)* |
+| 3️⃣ | Tape `/goal va au bout` *(empêche Claude d'abandonner — **essentiel**)* |
+| 4️⃣ | Colle le **prompt** ci-dessous ⬇️ |
+| 5️⃣ | Réponds à ses questions, suis ses instructions ✅ |
+
+> ⚠️ Une étape coupe une sécurité de macOS (SIP/AMFI). **Claude te demandera ton accord avant**
+> et t'expliquera le risque. C'est le prix pour avoir **stéréo + partage d'écran** ensemble.
+
+### 📋 Le prompt à coller
 
 ```text
 Je suis sur un Mac Apple Silicon. Objectif : faire transmettre mon micro Discord en
@@ -38,6 +45,11 @@ Le module patché est ad-hoc : il ne se charge que si AMFI est désactivé (SIP 
 qui permet de garder Discord.app en Developer-ID intact → screenshare préservé.
 Un périphérique d'entrée 2 CANAUX doit être sélectionné dans Discord (n'importe lequel :
 interface/micro stéréo, ou un câble virtuel 2ch pour router une source stéréo).
+
+IMPORTANT — je suis DÉBUTANT : explique chaque étape en mots simples (ce que tu fais et
+pourquoi), vérifie le résultat après chaque étape, et avant de toucher à la sécurité macOS
+(désactiver SIP puis AMFI), ARRÊTE-TOI et DEMANDE-MOI ma confirmation en m'expliquant
+clairement le risque. Ne désactive rien sans mon accord explicite.
 
 Étapes à exécuter :
 1. Vérifie qu'Equicord est installé et injecté dans Discord (sinon guide-moi pour l'installer).
@@ -61,6 +73,22 @@ log ne montre pas 2 canaux en capture.
 prix pour avoir stéréo **et** screenshare ensemble. À faire en connaissance de cause.
 
 ---
+
+## 🎁 Bonus — FollowVoiceUser « débridé »
+
+Plugin Equicord pour **suivre quelqu'un en vocal** (quand il change de salon, tu le suis).
+La version d'origine ne marche que pour tes **amis**. Cette version est **débridée** : tu peux
+suivre **n'importe quel utilisateur**.
+
+📄 `bonus/followVoiceUser/index.tsx` → à copier dans `src/equicordplugins/followVoiceUser/`
+de ton Equicord, puis rebuild (`pnpm build`). Clic droit sur un user → « Follow ».
+
+---
+
+# 🔧 Détails techniques (optionnel)
+
+*Pas besoin de lire ça pour répliquer — Claude s'en occupe. C'est ici pour comprendre comment
+ça marche sous le capot.*
 
 ## Vérité terrain : le log WebRTC
 
