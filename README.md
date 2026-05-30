@@ -24,6 +24,29 @@ step by step. You paste a prompt, answer its questions. That's it.
 >
 > A mono mic → stays mono, no matter the patches. Sort this out first.
 
+## 🎚️ Set up the stereo source (example: DAW → Discord)
+
+So you really get *how* this works — a concrete setup that sends a stereo signal to Discord
+**while still hearing yourself live**:
+
+1. **Audio MIDI Setup** (macOS) → create a **Multi-Output Device** combining **BlackHole 2ch** +
+   your **headphones** (enable *Drift Correction* on the headphones, primary device = BlackHole,
+   48 kHz). It plays your audio to Discord **and** your ears at once.
+2. In your **DAW** (Ableton / Reaper / FL Studio) → Preferences → Audio: **Input** = your audio
+   interface, **Output** = the Multi-Output Device.
+3. In **Discord** → Settings → Voice & Video → **Input Device = BlackHole 2ch**.
+
+Flow: interface → DAW (stereo) → Multi-Output → headphones (monitoring) **+** BlackHole 2ch →
+Discord (stereo mic).
+
+**1) Multi-Output Device** (macOS Audio MIDI Setup) — BlackHole 2ch + headphones:
+
+![Multi-Output Device in Audio MIDI Setup](assets/multi-output-device.png)
+
+**2) DAW audio settings** (here Ableton Live) — input = your interface, output = the Multi-Output:
+
+![DAW audio I/O settings](assets/daw-audio-settings.png)
+
 ## 🚀 Quick start
 
 | | Step |
@@ -128,33 +151,8 @@ Depending on your goal:
   [BlackHole 2ch](https://existential.audio/blackhole/) (`brew install blackhole-2ch`) — but that's
   just **one** option; any 2ch device works.
 
-No specific 2ch device is required by this repo; only the **channel count (2)** matters.
-
-### Example routing — DAW → Discord, with live monitoring
-
-A real-world setup that sends a stereo signal to Discord **while still hearing yourself live**
-(tested config behind this repo):
-
-1. **Audio MIDI Setup** (macOS) → create a **Multi-Output Device** that combines **BlackHole 2ch**
-   + your **headphones** (enable *Drift Correction* on the headphones, primary device = BlackHole,
-   48 kHz). This plays your audio to Discord **and** your ears at the same time.
-2. In your **DAW** (Ableton / Reaper / FL Studio) → Preferences → Audio:
-   - **Input** = your audio interface / sound card (e.g. a 2-in/2-out USB interface),
-   - **Output** = the Multi-Output Device you just created.
-3. In **Discord** → Settings → Voice & Video → **Input Device = BlackHole 2ch**.
-
-Result: your interface → DAW (stereo) → Multi-Output → headphones (live monitoring) **+**
-BlackHole 2ch → Discord (stereo mic). Adjust buffer size in the DAW for low latency.
-
-**1) Multi-Output Device** (macOS Audio MIDI Setup) — BlackHole 2ch + headphones, 48 kHz,
-drift correction on the headphones:
-
-![Multi-Output Device in Audio MIDI Setup](assets/multi-output-device.png)
-
-**2) DAW audio settings** (here Ableton Live) — input = your interface, output = the Multi-Output
-Device:
-
-![DAW audio I/O settings](assets/daw-audio-settings.png)
+No specific 2ch device is required by this repo; only the **channel count (2)** matters. See the
+worked example near the top of this README (**Set up the stereo source**).
 
 ## Layer 1 — Renderer plugin (JS)
 
