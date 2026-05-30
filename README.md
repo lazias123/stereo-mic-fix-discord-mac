@@ -130,6 +130,22 @@ Depending on your goal:
 
 No specific 2ch device is required by this repo; only the **channel count (2)** matters.
 
+### Example routing — DAW → Discord, with live monitoring
+
+A real-world setup that sends a stereo signal to Discord **while still hearing yourself live**
+(tested config behind this repo):
+
+1. **Audio MIDI Setup** (macOS) → create a **Multi-Output Device** that combines **BlackHole 2ch**
+   + your **headphones** (enable *Drift Correction* on the headphones, primary device = BlackHole,
+   48 kHz). This plays your audio to Discord **and** your ears at the same time.
+2. In your **DAW** (Ableton / Reaper / FL Studio) → Preferences → Audio:
+   - **Input** = your audio interface / sound card (e.g. a 2-in/2-out USB interface),
+   - **Output** = the Multi-Output Device you just created.
+3. In **Discord** → Settings → Voice & Video → **Input Device = BlackHole 2ch**.
+
+Result: your interface → DAW (stereo) → Multi-Output → headphones (live monitoring) **+**
+BlackHole 2ch → Discord (stereo mic). Adjust buffer size in the DAW for low latency.
+
 ## Layer 1 — Renderer plugin (JS)
 
 `src/equicordplugins/stereoMic/index.tsx`. The **webpack** patch on `getCodecOptions` doesn't
