@@ -146,6 +146,16 @@ A real-world setup that sends a stereo signal to Discord **while still hearing y
 Result: your interface → DAW (stereo) → Multi-Output → headphones (live monitoring) **+**
 BlackHole 2ch → Discord (stereo mic). Adjust buffer size in the DAW for low latency.
 
+**1) Multi-Output Device** (macOS Audio MIDI Setup) — BlackHole 2ch + headphones, 48 kHz,
+drift correction on the headphones:
+
+![Multi-Output Device in Audio MIDI Setup](assets/multi-output-device.png)
+
+**2) DAW audio settings** (here Ableton Live) — input = your interface, output = the Multi-Output
+Device:
+
+![DAW audio I/O settings](assets/daw-audio-settings.png)
+
 ## Layer 1 — Renderer plugin (JS)
 
 `src/equicordplugins/stereoMic/index.tsx`. The **webpack** patch on `getCodecOptions` doesn't
