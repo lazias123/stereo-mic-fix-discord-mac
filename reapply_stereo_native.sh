@@ -9,8 +9,8 @@
 #     break the seal and kill Go Live). This is the trade that lets both features coexist.
 #   - The renderer codec side is handled by the StereoMic plugin's start() runtime patch
 #     (built into Equicord), NOT by this script.
-#   - A 2-channel input device (e.g. BlackHole2ch) must be selected in Discord; "Default"
-#     is mono and yields mono no matter what.
+#   - A 2-channel input device must be selected in Discord (any stereo mic/interface, or a
+#     2ch virtual cable like BlackHole). "Default"/a mono mic yields mono no matter what.
 #
 # The 4 native patches (WebRTC AudioProcessingImpl / AudioDeviceMac, arm64 slice):
 #   InitRecording  AudioDeviceMac::InitRecording   -> force _recChannels = 2
@@ -107,4 +107,4 @@ codesign -v "$LIVE_NODE" && echo "module sig OK"
 # so Screen Recording / Go Live keep working and TCC grants are preserved.
 
 echo "Done. Relaunch Discord."
-echo "Reminders: keep a 2ch input device (e.g. BlackHole2ch) selected; AMFI must stay off."
+echo "Reminders: keep a 2-channel input device selected; AMFI must stay off."

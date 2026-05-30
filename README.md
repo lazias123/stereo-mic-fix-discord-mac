@@ -15,7 +15,12 @@ du mono (L = R). Le fix demande deux couches : un plugin renderer **et** un patc
 
 1. Installe [Claude Code](https://claude.com/claude-code). Choisis le modèle **Opus** (`/model` → Opus).
 2. Clone ce repo et ouvre Claude Code dedans : `git clone … && cd stereo-mic-fix-discord-mac && claude`
-3. Colle **exactement** ce prompt :
+3. **Active un objectif persistant : tape `/goal va au bout`.** ⚠️ C'est LE truc qui fait
+   marcher l'ensemble. `/goal` pose un hook qui empêche Claude de s'arrêter tant que la stéréo
+   n'est pas confirmée — il enchaîne reverse-engineering du binaire, signature de code, debug
+   du log WebRTC sans abandonner. Sans `/goal`, il s'arrête au premier obstacle. C'est grâce à
+   `/goal` que ce repo existe.
+4. Colle **exactement** ce prompt :
 
 ```text
 Je suis sur un Mac Apple Silicon. Objectif : faire transmettre mon micro Discord en
@@ -31,7 +36,8 @@ Résumé du fix (deux couches) :
    contexte "stream" (Go Live) est ÉPARGNÉ pour que le partage d'écran reste OK.
 Le module patché est ad-hoc : il ne se charge que si AMFI est désactivé (SIP off), ce
 qui permet de garder Discord.app en Developer-ID intact → screenshare préservé.
-Un périphérique d'entrée 2 canaux (BlackHole2ch) doit être sélectionné dans Discord.
+Un périphérique d'entrée 2 CANAUX doit être sélectionné dans Discord (n'importe lequel :
+interface/micro stéréo, ou un câble virtuel 2ch pour router une source stéréo).
 
 Étapes à exécuter :
 1. Vérifie qu'Equicord est installé et injecté dans Discord (sinon guide-moi pour l'installer).
@@ -40,8 +46,9 @@ Un périphérique d'entrée 2 canaux (BlackHole2ch) doit être sélectionné dan
 4. Guide-moi pas à pas pour :
    - désactiver SIP puis AMFI : Recovery → "csrutil disable", reboot, puis
      sudo nvram boot-args="amfi_get_out_of_my_way=1", reboot ;
-   - installer BlackHole 2ch (brew install blackhole-2ch) et le sélectionner dans
-     Discord → Réglages → Voix et vidéo → Périphérique d'entrée.
+   - sélectionner un périphérique d'entrée 2 CANAUX dans Discord → Réglages → Voix et
+     vidéo → Périphérique d'entrée (un micro/interface stéréo, ou un câble virtuel 2ch
+     comme BlackHole 2ch `brew install blackhole-2ch` si je veux router une source stéréo).
 5. Vérifie le résultat dans ~/Library/Application Support/discord/logs/discord-webrtc_0 :
    SetRecordingChannels(2) qui reste, captured_audio_processor channels:2, et
    ConfigureStream num_channels:2 stereo:1.
@@ -68,11 +75,20 @@ Lignes clés à surveiller :
 - `echo_canceller3.cc:792: AEC3 created … num capture channels: N` — sous-module APM
 - `audio_processing_impl.cc: ApplyConfig … multi_channel_capture: 0` — la config qui cause le downmix
 
-## Couche 0 — Périphérique d'entrée (PRÉREQUIS)
+## Couche 0 — Périphérique d'entrée 2 canaux (PRÉREQUIS)
 
-Discord capture le nb de canaux du **device d'entrée**. « Défaut » = souvent **mono** → tout
-le reste est inutile. Sélectionner une source **2 canaux** (Réglages → Voix et vidéo →
-Périphérique d'entrée) : ex. **BlackHole2ch**, ou une interface audio 2 canaux. Sans ça : mono.
+Discord capture le nb de canaux du **device d'entrée**. « Défaut » / un micro mono = **1 canal**
+→ tout le reste est inutile (L = R). Il faut sélectionner un **périphérique d'entrée 2 canaux**
+(Réglages → Voix et vidéo → Périphérique d'entrée).
+
+Selon ton but :
+- **Transmettre une source stéréo** (musique, audio d'une app, mix stéréo) → route-la dans un
+  câble audio virtuel **2 canaux** et choisis-le comme entrée. Sur macOS, un exemple gratuit est
+  [BlackHole 2ch](https://existential.audio/blackhole/) (`brew install blackhole-2ch`) — mais
+  c'est juste **un** moyen ; n'importe quel device 2ch convient.
+- **Vrai micro / interface stéréo** → sélectionne-le directement.
+
+Aucun device 2ch précis n'est imposé par ce repo ; seul le **nombre de canaux (2)** compte.
 
 ## Couche 1 — Plugin renderer (JS)
 
@@ -167,7 +183,7 @@ Idempotent (re-run = « already patched »). Le plugin renderer persiste via le 
 3. **`discord_voice.node`** : 4 patches (InitRec+P1/P2/P3) + ad-hoc signé → `reapply_stereo_native.sh`.
 4. **Plugin StereoMic** (`required:true`) : patch runtime de `getCodecOptions` dans `start()`,
    micro→2ch, `"stream"` épargné (screenshare safe). Buildé dans Equicord.
-5. **Périphérique d'entrée 2ch** (BlackHole2ch ou interface audio 2ch), pas « Défaut ».
+5. **Périphérique d'entrée 2 canaux** (micro/interface stéréo, ou câble virtuel 2ch type BlackHole), pas « Défaut ».
 
 ## Validation (preuves)
 
